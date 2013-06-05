@@ -142,13 +142,6 @@ void loop() {
   readsensor();
   //Check if all readings are the same which indictae a stabile behaviour and if the value is higher or lower update global max and min variables.
   updateNewMaxOrMinWithTempHumidity(tempRead1, tempRead1, tempRead1);
-  //Debug start
-  //updateNewMaxOrMin(acetoneResistanceToPPM(toResistance(tempRead1)), acetoneResistanceToPPM(toResistance(tempRead2)), acetoneResistanceToPPM(toResistance(tempRead3)));
-  //updateNewMaxOrMin(acetoneResistanceToPPMf(toResistance(tempRead1)), acetoneResistanceToPPMf(toResistance(tempRead2)), acetoneResistanceToPPMf(toResistance(tempRead3)));
-  //updateNewMaxOrMin(tempRead1, tempRead1, tempRead1);
-  //Debug stop
-
-
   //print result to display if current value is different to previous value and update the highest value.
   if (acetoneResistanceToPPMf(toResistance(temperatureScaledValue)) != lastPPM){
     lastPPM = acetoneResistanceToPPMf(toResistance(temperatureScaledValue));
@@ -234,14 +227,15 @@ void readsensor(){
 //Update screen with result
 void updateScreen(){
   clearLcd();
-//  printToRow1("Acetone in PPM");
 ///// DEBUG start
     printToRow1("H:");
     printIntToCurrentCursorPossition((int)currentHumidity);
     printStringToCurrentCursorPossition(" T:");
     printIntToCurrentCursorPossition((int)currentTemperature);
-    printStringToCurrentCursorPossition(" S:");
-    printFloatToCurrentCursorPossition((float)scalingFactor);
+   // printStringToCurrentCursorPossition(" S:");
+   // printFloatToCurrentCursorPossition((float)scalingFactor);
+    printStringToCurrentCursorPossition(" R:");
+    printIntToCurrentCursorPossition((int)GlobalMaxValue);
 ///// Debug end
 
   printToRow2("Now:    Max:    ");
@@ -262,7 +256,7 @@ void updateScreen(){
   }
 }
 
-
+//calculate the gas concentration relative to the resistance
 int acetoneResistanceToPPMf(float resistance){
   double tempResistance = (double)resistance;
   double PPM; 
@@ -283,7 +277,7 @@ int acetoneResistanceToPPMf(float resistance){
 
 
 
-//read reset max pin
+//debounce function
 boolean debounce(boolean last, int pin )
 {
   boolean current = digitalRead(pin);
@@ -295,32 +289,21 @@ boolean debounce(boolean last, int pin )
   return current;
 }
 
+//temperature sensor function, values has been hardcoded to humidity = 60 and temperature = 28 to speed up the measuring.
 int tempHumidityCompensation(int value){
     int chk = DHT11.read(DHT11PIN);
     delay(300);
-    /*
-    delay(20);
-    switch (chk){
-     case 0: 
-     break;
-    case -1: 
-    tempHumidityCompensation(value); 
-    case -2: 
-    tempHumidityCompensation(value); 
-    default: 
-    tempHumidityCompensation(value); 
-    }
-    */
     //currentHumidity = ((double)DHT11.humidity);
-    //Hardcoded after realizing that the temperature and humidity were beahving satbilly.
+    //Hardcoded after realizing that the temperature and humidity were beahaving stabilly.
     currentHumidity = 60;
     //currentTemperature = ((double)DHT11.temperature);
     currentTemperature = 28;
+    //function derrived from regression analysis of the graph in the datasheet
     scalingFactor = (((currentTemperature * -0.02573)+1.898)+((currentHumidity*-0.011)+0.3966));
-    debug
-    clearLcd();
-    printToRow1("Scalefactor:");
-    printFloatToCurrentCursorPossition((float)scalingFactor);
+    //debug
+    //clearLcd();
+    //printToRow1("Scalefactor:");
+    //printFloatToCurrentCursorPossition((float)scalingFactor);
     delay(1000);
     //debugstop*/
     double scaledValue = value * scalingFactor;
@@ -328,7 +311,7 @@ int tempHumidityCompensation(int value){
     
 }
       
- 
+//check if we have new max or min after temperature and humidity scaling has been done. 
 void updateNewMaxOrMinWithTempHumidity(int value1, int value2, int value3){
   if (value1 == value2 && value1 == value3){
     temperatureScaledValue = tempHumidityCompensation(value1);
@@ -347,7 +330,7 @@ void updateNewMaxOrMinWithTempHumidity(int value1, int value2, int value3){
     }
   }
 }
-//check if the value of the sensor has been stabile for 
+//check if we have new max or min without temperature and humidity scaling. 
 void updateNewMaxOrMin(int value1, int value2, int value3){
   if (value1 == value2 && value1 == value3){
     if (GlobalMaxValue==0){
@@ -365,7 +348,7 @@ void updateNewMaxOrMin(int value1, int value2, int value3){
   }
 }
 
-//Convert the 1-1023 value from gas sensor analog read to a resistance.
+//Convert the 1-1023 voltage value from gas sensor analog read to a resistance, 9800 is the value of the other resistor in the voltage divide.
 float toResistance(int reading){
   float resistance = ((5/toVoltage(reading) - 1) * 9800);
   return resistance;
@@ -483,5 +466,6 @@ boolean checkIfSensorIsStabile()
   else return false;
 
 }
+
 
 
