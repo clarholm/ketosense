@@ -71,7 +71,7 @@ float value2 = 0;
 float value3 = 0;
 
 // General Var
-float R0 = 3000;
+float R0 = 4500;
 int lastPPM = 0;
 
 double currentHumidity;
@@ -263,15 +263,10 @@ int acetoneResistanceToPPMf(float resistance){
   if (tempResistance > 50000){
   double PPM = 0;
   }
-  else if (tempResistance <= 50000 && tempResistance > 3600){
-  double logPPM = (log10(tempResistance/R0)*-1.5512)+2.5911;
+  else {
+  double logPPM = (log10(tempResistance/R0)*-2.6)+2.7;
    PPM = pow(10, logPPM);
   }
-  else{
-  double logPPM = (log10(tempResistance/R0)*-0.9768)+2.4906;
-   PPM = pow(10, logPPM);
-  }
-  
   return (int)PPM;
 }
 
